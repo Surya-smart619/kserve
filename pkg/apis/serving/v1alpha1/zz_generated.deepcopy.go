@@ -225,7 +225,7 @@ func (in *ServingRuntimePodSpec) DeepCopyInto(out *ServingRuntimePodSpec) {
 	*out = *in
 	if in.Containers != nil {
 		in, out := &in.Containers, &out.Containers
-		*out = make([]Container, len(*in))
+		*out = make([]v1.Container, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

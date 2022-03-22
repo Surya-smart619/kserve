@@ -119,10 +119,11 @@ func (p *Predictor) Reconcile(isvc *v1beta1.InferenceService) error {
 			return errors.New("no container configuration found in selected serving runtime")
 		}
 		// Assume only one container is specified in runtime spec.
-		container, err = isvcutils.MergeRuntimeContainers(&sRuntime.Containers[0], &isvc.Spec.Predictor.Model.Container)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get runtime container")
-		}
+		// container, err = isvcutils.MergeRuntimeContainers(&sRuntime.Containers[0], &isvc.Spec.Predictor.Model.Container)
+		// if err != nil {
+		// 	return errors.Wrapf(err, "failed to get runtime container")
+		// }
+		container = &isvc.Spec.Predictor.Model.Container
 
 		mergedPodSpec, err := isvcutils.MergePodSpec(&sRuntime.ServingRuntimePodSpec, &isvc.Spec.Predictor.PodSpec)
 		if err != nil {

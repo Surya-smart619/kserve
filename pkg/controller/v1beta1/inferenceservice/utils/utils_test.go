@@ -1319,7 +1319,7 @@ func TestGetServingRuntime(t *testing.T) {
 				},
 			},
 			ServingRuntimePodSpec: v1alpha1.ServingRuntimePodSpec{
-				Containers: []v1alpha1.Container{
+				Containers: []v1.Container{
 					{
 						Name:  "kserve-container",
 						Image: tfRuntime + "-image:latest",
@@ -1336,7 +1336,7 @@ func TestGetServingRuntime(t *testing.T) {
 				},
 			},
 			ServingRuntimePodSpec: v1alpha1.ServingRuntimePodSpec{
-				Containers: []v1alpha1.Container{
+				Containers: []v1.Container{
 					{
 						Name:  "kserve-container",
 						Image: sklearnRuntime + "-image:latest",
