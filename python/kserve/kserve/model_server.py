@@ -67,6 +67,7 @@ class ModelServer:
         self._http_server: Optional[tornado.httpserver.HTTPServer] = None
 
     def create_application(self):
+        dataplane = handlers.DataPlane(model_registry=self.registered_models)
         return tornado.web.Application([
             # Server Liveness API returns 200 if server is alive.
             (r"/", handlers.LivenessHandler),
@@ -83,11 +84,13 @@ class ModelServer:
             (r"/v1/models/([a-zA-Z0-9_-]+):predict",
              handlers.PredictHandler, dict(models=self.registered_models)),
             (r"/v2/models/([a-zA-Z0-9_-]+)/infer",
-             handlers.PredictHandler, dict(models=self.registered_models)),
+             handlers.Routes, dict(dataplane=dataplane)),
+            (r"/v2/models/([a-zA-Z0-9_-]+)/model-metadata",
+             handlers.Routes, dict(dataplane=dataplane)),
             (r"/v1/models/([a-zA-Z0-9_-]+):explain",
              handlers.ExplainHandler, dict(models=self.registered_models)),
             (r"/v2/models/([a-zA-Z0-9_-]+)/explain",
-             handlers.ExplainHandler, dict(models=self.registered_models)),
+             handlers.Routes, dict(dataplane=dataplane)),
             (r"/v2/repository/models/([a-zA-Z0-9_-]+)/load",
              handlers.LoadHandler, dict(models=self.registered_models)),
             (r"/v2/repository/models/([a-zA-Z0-9_-]+)/unload",
