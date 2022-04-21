@@ -71,16 +71,17 @@ class ModelServer:
         return tornado.web.Application([
             # Server Liveness API returns 200 if server is alive.
             (r"/", handlers.LivenessHandler),
-            (r"/v2/health/live", handlers.LivenessHandler),
+            (r"/v2/health/live",
+             handlers.Routes, dict(dataplane=dataplane)),
             (r"/v1/models",
              handlers.ListHandler, dict(models=self.registered_models)),
             (r"/v2/models",
-             handlers.ListHandler, dict(models=self.registered_models)),
+             handlers.Routes, dict(dataplane=dataplane)),
             # Model Health API returns 200 if model is ready to serve.
             (r"/v1/models/([a-zA-Z0-9_-]+)",
              handlers.HealthHandler, dict(models=self.registered_models)),
             (r"/v2/models/([a-zA-Z0-9_-]+)/status",
-             handlers.HealthHandler, dict(models=self.registered_models)),
+             handlers.Routes, dict(dataplane=dataplane)),
             (r"/v1/models/([a-zA-Z0-9_-]+):predict",
              handlers.PredictHandler, dict(models=self.registered_models)),
             (r"/v2/models/([a-zA-Z0-9_-]+)/infer",
@@ -92,9 +93,9 @@ class ModelServer:
             (r"/v2/models/([a-zA-Z0-9_-]+)/explain",
              handlers.Routes, dict(dataplane=dataplane)),
             (r"/v2/repository/models/([a-zA-Z0-9_-]+)/load",
-             handlers.LoadHandler, dict(models=self.registered_models)),
+             handlers.Routes, dict(dataplane=dataplane)),
             (r"/v2/repository/models/([a-zA-Z0-9_-]+)/unload",
-             handlers.UnloadHandler, dict(models=self.registered_models)),
+             handlers.Routes, dict(dataplane=dataplane)),
         ], default_handler_class=handlers.NotFoundHandler)
 
     def start(self, models: Union[List[Model], Dict[str, Deployment]], nest_asyncio: bool = False):
