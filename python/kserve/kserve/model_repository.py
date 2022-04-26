@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from typing import Dict, Optional, Union
-from kserve import Model
+from kserve import Model, ModelV2
 from ray.serve.api import RayServeHandle
 import os
 
@@ -39,23 +39,23 @@ class ModelRepository:
     def set_models_dir(self, models_dir):  # used for unit tests
         self.models_dir = models_dir
 
-    def get_model(self, name: str) -> Optional[Union[Model, RayServeHandle]]:
+    def get_model(self, name: str) -> Optional[Union[Model, ModelV2, RayServeHandle]]:
         return self.models.get(name, None)
 
-    def get_models(self) -> Dict[str, Union[Model, RayServeHandle]]:
+    def get_models(self) -> Dict[str, Union[Model, ModelV2, RayServeHandle]]:
         return self.models
 
     def is_model_ready(self, name: str):
         model = self.get_model(name)
         if not model:
             return False
-        if isinstance(model, Model):
+        if isinstance(model, Model) or isinstance(model, ModelV2):
             return False if model is None else model.ready
         else:
             # For Ray Serve, the models are guaranteed to be ready after deploying the model.
             return True
 
-    def update(self, model: Model):
+    def update(self, model: Union[Model, ModelV2]):
         self.models[model.name] = model
 
     def update_handle(self, name: str, model_handle: RayServeHandle):

@@ -25,7 +25,7 @@ from tornado import concurrent
 from .utils import utils
 
 import kserve.handlers as handlers
-from kserve import Model
+from kserve import Model, ModelV2
 from kserve.model_repository import ModelRepository
 from ray.serve.api import Deployment, RayServeHandle
 from ray import serve
@@ -101,10 +101,10 @@ class ModelServer:
     def start(self, models: Union[List[Model], Dict[str, Deployment]], nest_asyncio: bool = False):
         if isinstance(models, list):
             for model in models:
-                if isinstance(model, Model):
+                if isinstance(model, Model) or isinstance(model, ModelV2):
                     self.register_model(model)
                 else:
-                    raise RuntimeError("Model type should be Model")
+                    raise RuntimeError("Model type should be Model or ModelV2")
         elif isinstance(models, dict):
             if all([isinstance(v, Deployment) for v in models.values()]):
                 serve.start(detached=True, http_options={"host": "0.0.0.0", "port": 9071})

@@ -234,10 +234,3 @@ class Model:
                 reason=response.body)
         return json.loads(response.body)
 
-    async def metadata(self):
-        return {
-            'name': self.name,
-            'is_ready': self.ready,
-            'predictor_host': self.predictor_host,
-            'explainer_host': self.explainer_host
-        }

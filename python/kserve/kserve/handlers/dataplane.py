@@ -17,9 +17,9 @@ class DataPlane:
 
     async def explain(self, payload, name):
         model = self._model_registry.get_model(name)
-        response = await model(payload, model_type=ModelType.EXPLAINER)
+        response = await model.explain(payload)
         if not isinstance(model, RayServeHandle):
-            response = await model(payload, model_type=ModelType.EXPLAINER)
+            response = await model.explain(payload)
         else:
             model_handle = model
             response = await model_handle.remote(payload, model_type=ModelType.EXPLAINER)
