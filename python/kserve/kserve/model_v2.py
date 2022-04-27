@@ -18,8 +18,9 @@ PREDICTOR_URL_FORMAT = "http://{0}/v2/models/{1}/infer"
 
 class ModelV2:
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, version: str = None):
         self.name = name
+        self.version = version
         self.ready = False
         self.predictor_host = None
         self.explainer_host = None
@@ -118,6 +119,7 @@ class ModelV2:
     async def metadata(self):
         return {
             'name': self.name,
+            'version': self.version,
             'is_ready': self.ready,
             'predictor_host': self.predictor_host,
             'explainer_host': self.explainer_host

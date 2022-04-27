@@ -10,13 +10,21 @@ class DataPlane:
 
     def __init__(self, model_registry: ModelRepository):
         self._model_registry = model_registry
+        self._server_name = "kserve"
+        self._server_version = "v0.8.0"
 
-    async def model_metadata(self, name):
-        model = self._model_registry.get_model(name)
+    async def metadata(self):
+        return {
+            "name": self._server_name,
+            "version": self._server_version
+        }
+
+    async def model_metadata(self, name: str, version: str = None):
+        model = self.get_model_from_registry(name, version)
         return await model.metadata()
 
-    async def explain(self, payload, name):
-        model = self._model_registry.get_model(name)
+    async def explain(self, payload, name: str, version: str = None):
+        model = self.get_model_from_registry(name, version)
         response = await model.explain(payload)
         if not isinstance(model, RayServeHandle):
             response = await model.explain(payload)
@@ -26,9 +34,9 @@ class DataPlane:
         return response
 
     async def infer(
-        self, payload, name: str
+        self, payload, name: str, version: str = None
     ):
-        model = self._model_registry.get_model(name)
+        model = self.get_model_from_registry(name, version)
         prediction = (await model.predict(payload)) if inspect.iscoroutinefunction(model.predict) \
             else model.predict(payload)
         return prediction
@@ -36,13 +44,13 @@ class DataPlane:
     async def list(self):
         return {"models": list(self._model_registry.get_models().keys())}
 
-    async def status(self, name):
-        model = self._model_registry.get_model(name)
-        if model is None:
-            raise tornado.web.HTTPError(
-                status_code=404,
-                reason="Model with name %s does not exist." % name
-            )
+    async def ready(self):
+        models = self._model_registry.get_models().values()
+        is_ready = all([model.ready for model in models])
+        return {"ready": is_ready}
+
+    async def status(self, name: str, version: str = None):
+        self.get_model_from_registry(name, version)
         is_ready = self._model_registry.is_model_ready(name)
         return {
             "name": name,
@@ -66,3 +74,13 @@ class DataPlane:
             "name": name,
             "unload": True
         }
+
+    def get_model_from_registry(self, name: str, version: str = None):
+        model = self._model_registry.get_model(name, version)
+        if model is None:
+            raise tornado.web.HTTPError(
+                status_code=404,
+                reason="Model with name %s does not exist." % name if not version
+                else "Model with name %s and version %s does not exist." % (name, version)
+            )
+        return model
