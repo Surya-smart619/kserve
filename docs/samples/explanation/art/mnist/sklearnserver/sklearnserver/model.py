@@ -22,8 +22,8 @@ MODEL_EXTENSIONS = [".joblib", ".pkl", ".pickle"]
 
 
 class SKLearnModel(kserve.Model):  # pylint:disable=c-extension-no-member
-    def __init__(self, name: str, model_dir: str):
-        super().__init__(name)
+    def __init__(self, name: str, model_dir: str, version: str = None):
+        super().__init__(name, version)
         self.name = name
         self.model_dir = model_dir
         self.ready = False

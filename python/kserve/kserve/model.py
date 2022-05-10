@@ -62,8 +62,9 @@ class InferenceError(RuntimeError):
 
 # Model is intended to be subclassed by various components within KServe.
 class Model:
-    def __init__(self, name: str):
+    def __init__(self, name: str, version: str = None):
         self.name = name
+        self.version = version
         self.ready = False
         self.protocol = PredictorProtocol.REST_V1.value
         self.predictor_host = None
@@ -233,3 +234,12 @@ class Model:
                 status_code=response.code,
                 reason=response.body)
         return json.loads(response.body)
+
+    async def metadata(self):
+        return {
+            'name': self.name,
+            'version': self.version,
+            'is_ready': self.ready,
+            'predictor_host': self.predictor_host,
+            'explainer_host': self.explainer_host
+        }

@@ -39,14 +39,17 @@ class ModelRepository:
     def set_models_dir(self, models_dir):  # used for unit tests
         self.models_dir = models_dir
 
-    def get_model(self, name: str) -> Optional[Union[Model, RayServeHandle]]:
-        return self.models.get(name, None)
+    def get_model(self, name: str, version: str = None) -> Optional[Union[Model, RayServeHandle]]:
+        model = self.models.get(name, None)
+        if model and version:
+            return model if model.version == version else None
+        return model
 
     def get_models(self) -> Dict[str, Union[Model, RayServeHandle]]:
         return self.models
 
-    def is_model_ready(self, name: str):
-        model = self.get_model(name)
+    def is_model_ready(self, name: str, version: str = None):
+        model = self.get_model(name, version)
         if not model:
             return False
         if isinstance(model, Model):

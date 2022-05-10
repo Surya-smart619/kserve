@@ -15,6 +15,7 @@ from __future__ import absolute_import
 
 from kserve.model import Model
 from kserve.model_server import ModelServer
+from kserve.rest_server import RestServer
 from kserve.model_repository import ModelRepository
 from kserve.storage import Storage
 from kserve.constants import constants
