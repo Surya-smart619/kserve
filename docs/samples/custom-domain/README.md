@@ -43,8 +43,8 @@ configmap/config-domain edited
 
 Edit the `kfserving-ingress.yaml` file to add your custom wildcard domain to the `spec.rules.host` section, replacing `<*.custom_domain>` with your custom wildcard domain. This is so that all incoming network traffic from your custom domain and any subdomain is routed to the `istio-ingressgateway`.
 
-```
-apiVersion: networking.k8s.io/v1beta1
+```yaml
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: kfserving-ingress
@@ -54,9 +54,13 @@ spec:
     - host: "<*.custom_domain>"
       http:
         paths:
-          - backend:
-              serviceName: istio-ingressgateway
-              servicePort: 80
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: istio-ingressgateway
+              port:
+                number: 80
 ```
 
 Apply the Ingress resource
