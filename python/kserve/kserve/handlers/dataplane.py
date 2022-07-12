@@ -27,8 +27,9 @@ class DataPlane:
         return model
 
     async def live(self):
-        response = {"status": "alive"}
-        return response
+        # response = {"status": "alive"}
+        # return response
+        return True
 
     async def metadata(self):
         return {
@@ -46,14 +47,16 @@ class DataPlane:
     async def ready(self):
         models = self._model_registry.get_models().values()
         is_ready = all([model.ready for model in models])
-        return {"ready": is_ready}
+        # return {"ready": is_ready}
+        return is_ready
 
     async def model_ready(self, model_name: str, model_version: str = None):
         is_ready = self._model_registry.is_model_ready(model_name, model_version)
-        return {
-            "name": model_name,
-            "ready": is_ready
-        }
+        # return {
+        #     "name": model_name,
+        #     "ready": is_ready
+        # }
+        return is_ready
 
     async def load(self, name):
         self._model_registry.load(name)

@@ -23,8 +23,8 @@ from http import HTTPStatus
 from enum import Enum
 from kserve.utils.utils import is_structured_cloudevent
 import grpc
-from tritonclient.grpc import InferResult, service_pb2_grpc
-from tritonclient.grpc.service_pb2 import ModelInferRequest, ModelInferResponse
+# from tritonclient.grpc import InferResult, service_pb2_grpc
+# from tritonclient.grpc.service_pb2 import ModelInferRequest, ModelInferResponse
 
 
 PREDICTOR_URL_FORMAT = "http://{0}/v1/models/{1}:predict"
@@ -97,15 +97,15 @@ class Model:
             self._http_client_instance = AsyncHTTPClient(max_clients=sys.maxsize)
         return self._http_client_instance
 
-    @property
-    def _grpc_client(self):
-        if self._grpc_client_stub is None:
-            # requires appending ":80" to the predictor host for gRPC to work
-            if ":" not in self.predictor_host:
-                self.predictor_host = self.predictor_host + ":80"
-            _channel = grpc.aio.insecure_channel(self.predictor_host)
-            self._grpc_client_stub = service_pb2_grpc.GRPCInferenceServiceStub(_channel)
-        return self._grpc_client_stub
+    # @property
+    # def _grpc_client(self):
+    #     if self._grpc_client_stub is None:
+    #         # requires appending ":80" to the predictor host for gRPC to work
+    #         if ":" not in self.predictor_host:
+    #             self.predictor_host = self.predictor_host + ":80"
+    #         _channel = grpc.aio.insecure_channel(self.predictor_host)
+    #         self._grpc_client_stub = service_pb2_grpc.GRPCInferenceServiceStub(_channel)
+    #     return self._grpc_client_stub
 
     def validate(self, request):
         if self.protocol == PredictorProtocol.REST_V2.value:
@@ -131,7 +131,8 @@ class Model:
         self.ready = True
         return self.ready
 
-    async def preprocess(self, request: Union[Dict, CloudEvent]) -> Union[Dict, ModelInferRequest]:
+    # async def preprocess(self, request: Union[Dict, CloudEvent]) -> Union[Dict, ModelInferRequest]:
+    async def preprocess(self, request: Union[Dict, CloudEvent]) -> Dict:
         """
         The preprocess handler can be overridden for data or feature transformation.
         The default implementation decodes to Dict if it is a binary CloudEvent
@@ -164,15 +165,16 @@ class Model:
 
         return response
 
-    def postprocess(self, response: Union[Dict, ModelInferResponse]) -> Dict:
+    # def postprocess(self, response: Union[Dict, ModelInferResponse]) -> Dict:
+    def postprocess(self, response: Dict) -> Dict:
         """
         The postprocess handler can be overridden for inference response transformation
         :param response: Dict|ModelInferResponse passed from predict handler
         :return: Dict
         """
-        if isinstance(response, ModelInferResponse):
-            response = InferResult(response)
-            return response.get_response(as_json=True)
+        # if isinstance(response, ModelInferResponse):
+        #     response = InferResult(response)
+        #     return response.get_response(as_json=True)
         return response
 
     async def _http_predict(self, request: Dict) -> Dict:
@@ -193,11 +195,12 @@ class Model:
                 reason=response.body)
         return json.loads(response.body)
 
-    async def _grpc_predict(self, request: ModelInferRequest) -> ModelInferResponse:
-        async_result = await self._grpc_client.ModelInfer(request=request, timeout=self.timeout)
-        return async_result
+    # async def _grpc_predict(self, request: ModelInferRequest) -> ModelInferResponse:
+    #     async_result = await self._grpc_client.ModelInfer(request=request, timeout=self.timeout)
+    #     return async_result
 
-    async def predict(self, request: Union[Dict, ModelInferRequest]) -> Union[Dict, ModelInferResponse]:
+    # async def predict(self, request: Union[Dict, ModelInferRequest]) -> Union[Dict, ModelInferResponse]:
+    async def predict(self, request: Dict) -> Dict:
         """
         The predict handler can be overridden to implement the model inference.
         The default implementation makes a call to the predictor if predictor_host is specified
@@ -206,8 +209,8 @@ class Model:
         """
         if not self.predictor_host:
             raise NotImplementedError
-        if self.protocol == PredictorProtocol.GRPC_V2.value:
-            return await self._grpc_predict(request)
+        # if self.protocol == PredictorProtocol.GRPC_V2.value:
+        #     return await self._grpc_predict(request)
         else:
             return await self._http_predict(request)
 
@@ -237,8 +240,8 @@ class Model:
 
     async def metadata(self):
         return {
-            'name': self.name,
-            'version': self.version,
+            'model_name': self.name,
+            'model_versions': [self.version],
             'is_ready': self.ready,
             'predictor_host': self.predictor_host,
             'explainer_host': self.explainer_host

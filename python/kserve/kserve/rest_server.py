@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import logging
 from typing import Dict, List, Optional, Union
 
@@ -9,6 +10,8 @@ from fastapi.routing import APIRoute as FastAPIRoute
 import kserve.handlers as handlers
 from kserve.model import Model
 from kserve.model_repository import ModelRepository
+# from .grpc import servicer, server
+from kserve.grpc.server import GRPCServer
 
 DEFAULT_HTTP_PORT = 8080
 DEFAULT_GRPC_PORT = 8081
@@ -46,6 +49,7 @@ class RestServer:
 
     def create_application(self):
         dataplane = handlers.DataPlane(model_registry=self.registered_models)
+        self._grpc_server = GRPCServer(data_plane=dataplane)
         routes = [
             # Server metadata
             FastAPIRoute(
@@ -119,7 +123,10 @@ class RestServer:
             port=self.http_port,
         )
         self._server = uvicorn.Server(cfg)
-        await self._server.serve()
+        servers = [self._server.serve(), self._grpc_server.start()]
+        servers_task = asyncio.gather(*servers)
+        await servers_task
+        
 
     def register_model(self, model: Model):
         if not model.name:

@@ -21,6 +21,8 @@ from kserve.storage import Storage
 from kserve.constants import constants
 from kserve.utils import utils
 from kserve.handlers import base
+from kserve.grpc.servicer import InferenceServicer
+from kserve.grpc.server import GRPCServer
 
 # import client apis into kserve package
 from kserve.api.kserve_client import KServeClient
