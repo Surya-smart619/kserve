@@ -111,3 +111,19 @@ func IsPrefixSupported(input string, prefixes []string) bool {
 	}
 	return false
 }
+
+func AppendEnvVarIfNotExists(slice []v1.EnvVar, elems ...v1.EnvVar) []v1.EnvVar {
+	for _, elem := range elems {
+		isElemExists := false
+		for _, item := range slice {
+			if item.Name == elem.Name {
+				isElemExists = true
+				break
+			}
+		}
+		if isElemExists == false {
+			slice = append(slice, elem)
+		}
+	}
+	return slice
+}
