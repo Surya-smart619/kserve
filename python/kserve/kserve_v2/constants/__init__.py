@@ -11,23 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import os
-from kserve_v2.model_repository import ModelRepository, MODEL_MOUNT_DIRS
-from sklearnserver import SKLearnModel
-
-
-class SKLearnModelRepository(ModelRepository):
-
-    def __init__(self, model_dir: str = MODEL_MOUNT_DIRS):
-        super().__init__(model_dir)
-        self.load_models()
-
-    async def load(self, name: str) -> bool:
-        return self.load_model(name)
-
-    def load_model(self, name: str) -> bool:
-        model = SKLearnModel(name, os.path.join(self.models_dir, name))
-        if model.load():
-            self.update(model)
-        return model.ready

@@ -13,24 +13,28 @@
 # limitations under the License.
 
 import argparse
+import asyncio
 import logging
 
-import kserve
+import kserve_v2
 from sklearnserver import SKLearnModel, SKLearnModelRepository
-from kserve.model import ModelMissingError
+from kserve_v2.model import ModelMissingError
 
 DEFAULT_MODEL_NAME = "model"
 DEFAULT_LOCAL_MODEL_DIR = "/tmp/model"
-
-parser = argparse.ArgumentParser(parents=[kserve.model_server.parser])
+DEFAULT_MODEL_VERSION = "1.1.1"
+parser = argparse.ArgumentParser(parents=[kserve_v2.model_server.parser])
 parser.add_argument('--model_dir', required=True,
                     help='A URI pointer to the model binary')
 parser.add_argument('--model_name', default=DEFAULT_MODEL_NAME,
                     help='The name that the model is served under.')
+parser.add_argument('--model_version', default=DEFAULT_MODEL_VERSION,
+                    help='The version that the model is served under.')
+# TODO: Suports dynamic version in arg
 args, _ = parser.parse_known_args()
 
 if __name__ == "__main__":
-    model = SKLearnModel(args.model_name, args.model_dir)
+    model = SKLearnModel(args.model_name, args.model_dir, args.model_version)
     try:
         model.load()
 
@@ -38,4 +42,5 @@ if __name__ == "__main__":
         logging.error(f"fail to locate model file for model {args.model_name} under dir {args.model_dir},"
                       f"trying loading from model repository.")
 
-    kserve.ModelServer(registered_models=SKLearnModelRepository(args.model_dir)).start([model] if model.ready else [])
+    asyncio.run(kserve_v2.ModelServer(registered_models=SKLearnModelRepository(
+        args.model_dir)).start([model] if model.ready else []))
