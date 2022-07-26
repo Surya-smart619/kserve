@@ -155,6 +155,7 @@ data:
     }
   ingress: |-
     {
+        "enabled": false,
         "ingressGateway" : "$(ingressGateway)",
         "ingressService" : "istio-ingressgateway.istio-system.svc.cluster.local",
         "localGateway" : "knative-serving/knative-local-gateway",
