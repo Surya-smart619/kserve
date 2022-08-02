@@ -27,8 +27,9 @@ import (
 	"github.com/kserve/kserve/pkg/controller/v1alpha1/trainedmodel/reconcilers/modelconfig"
 	v1beta1controller "github.com/kserve/kserve/pkg/controller/v1beta1/inferenceservice"
 	"github.com/kserve/kserve/pkg/webhook/admission/pod"
-	istio_networking "istio.io/api/networking/v1alpha3"
-	"istio.io/client-go/pkg/apis/networking/v1alpha3"
+
+	// istio_networking "istio.io/api/networking/v1alpha3"
+	// "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -57,8 +58,8 @@ const (
 
 func init() {
 	// Allow unknown fields in Istio API client for backwards compatibility if cluster has existing vs with deprecated fields.
-	istio_networking.VirtualServiceUnmarshaler.AllowUnknownFields = true
-	istio_networking.GatewayUnmarshaler.AllowUnknownFields = true
+	// istio_networking.VirtualServiceUnmarshaler.AllowUnknownFields = true
+	// istio_networking.GatewayUnmarshaler.AllowUnknownFields = true
 }
 
 func main() {
@@ -124,11 +125,11 @@ func main() {
 			os.Exit(1)
 		}
 
-		log.Info("Setting up Istio schemes")
-		if err := v1alpha3.AddToScheme(mgr.GetScheme()); err != nil {
-			log.Error(err, "unable to add Istio v1alpha3 APIs to scheme")
-			os.Exit(1)
-		}
+		// log.Info("Setting up Istio schemes")
+		// if err := v1alpha3.AddToScheme(mgr.GetScheme()); err != nil {
+		// 	log.Error(err, "unable to add Istio v1alpha3 APIs to scheme")
+		// 	os.Exit(1)
+		// }
 	}
 
 	log.Info("Setting up core scheme")
