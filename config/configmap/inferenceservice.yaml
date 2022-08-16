@@ -162,7 +162,8 @@ data:
         "ingressDomain"  : "example.com",
         "ingressClassName" : "istio",
         "domainTemplate": "{{ .Name }}-{{ .Namespace }}.{{ .IngressDomain }}",
-        "urlScheme": "http"
+        "urlScheme": "http",
+        "disableIstioVirtualHost": false
     }
   logger: |-
     {
