@@ -29,6 +29,7 @@ from kserve import Model
 from kserve.model_repository import ModelRepository
 from ray.serve.api import Deployment, RayServeHandle
 from ray import serve
+from kserve.grpc.server import GRPCServer
 
 DEFAULT_HTTP_PORT = 8080
 DEFAULT_GRPC_PORT = 8081
@@ -67,6 +68,8 @@ class ModelServer:
         self._http_server: Optional[tornado.httpserver.HTTPServer] = None
 
     def create_application(self):
+        dataplane = handlers.DataPlane(model_registry=self.registered_models)
+        self._grpc_server = GRPCServer(port=self.grpc_port, data_plane=dataplane)
         return tornado.web.Application([
             # Server Liveness API returns 200 if server is alive.
             (r"/", handlers.LivenessHandler),
@@ -94,7 +97,7 @@ class ModelServer:
              handlers.UnloadHandler, dict(models=self.registered_models)),
         ], default_handler_class=handlers.NotFoundHandler)
 
-    def start(self, models: Union[List[Model], Dict[str, Deployment]], nest_asyncio: bool = False):
+    async def start(self, models: Union[List[Model], Dict[str, Deployment]], nest_asyncio: bool = False):
         if isinstance(models, list):
             for model in models:
                 if isinstance(model, Model):
@@ -136,7 +139,7 @@ class ModelServer:
             import nest_asyncio
             nest_asyncio.apply()
 
-        tornado.ioloop.IOLoop.current().start()
+        await self._grpc_server.start()
 
     def register_model_handle(self, name: str, model_handle: RayServeHandle):
         self.registered_models.update_handle(name, model_handle)

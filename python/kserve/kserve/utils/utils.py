@@ -15,6 +15,7 @@
 import os
 import sys
 from typing import Dict, Union
+import uuid
 
 import psutil
 from cloudevents.http import CloudEvent, to_binary, to_structured
@@ -116,3 +117,7 @@ def create_response_cloudevent(model_name: str, body: Union[Dict, CloudEvent], r
         event_headers, event_body = to_structured(event)
 
     return event_headers, event_body
+
+
+def generate_uuid() -> str:
+    return str(uuid.uuid4())

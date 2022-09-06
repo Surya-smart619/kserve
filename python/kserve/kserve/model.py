@@ -23,9 +23,8 @@ from http import HTTPStatus
 from enum import Enum
 from kserve.utils.utils import is_structured_cloudevent
 import grpc
-from tritonclient.grpc import InferResult, service_pb2_grpc
-from tritonclient.grpc.service_pb2 import ModelInferRequest, ModelInferResponse
-
+from kserve.grpc import grpc_predict_v2_pb2_grpc
+from kserve.grpc.grpc_predict_v2_pb2 import ModelInferRequest, ModelInferResponse
 
 PREDICTOR_URL_FORMAT = "http://{0}/v1/models/{1}:predict"
 EXPLAINER_URL_FORMAT = "http://{0}/v1/models/{1}:explain"
@@ -103,7 +102,7 @@ class Model:
             if ":" not in self.predictor_host:
                 self.predictor_host = self.predictor_host + ":80"
             _channel = grpc.aio.insecure_channel(self.predictor_host)
-            self._grpc_client_stub = service_pb2_grpc.GRPCInferenceServiceStub(_channel)
+            self._grpc_client_stub = grpc_predict_v2_pb2_grpc.GRPCInferenceServiceStub(_channel)
         return self._grpc_client_stub
 
     def validate(self, request):
@@ -130,7 +129,7 @@ class Model:
         self.ready = True
         return self.ready
 
-    async def preprocess(self, request: Union[Dict, CloudEvent]) -> Union[Dict, ModelInferRequest]:
+    async def preprocess(self, request: Union[Dict, CloudEvent, ModelInferRequest]) -> Union[Dict, ModelInferRequest]:
         """
         The preprocess handler can be overridden for data or feature transformation.
         The default implementation decodes to Dict if it is a binary CloudEvent
@@ -169,9 +168,6 @@ class Model:
         :param response: Dict|ModelInferResponse passed from predict handler
         :return: Dict
         """
-        if isinstance(response, ModelInferResponse):
-            response = InferResult(response)
-            return response.get_response(as_json=True)
         return response
 
     async def _http_predict(self, request: Dict) -> Dict:
@@ -233,3 +229,12 @@ class Model:
                 status_code=response.code,
                 reason=response.body)
         return json.loads(response.body)
+
+    async def metadata(self):
+        return {
+            "name": self.name,
+            "versions": [],
+            "platform": "",
+            "inputs": [],
+            "outputs": []
+        }

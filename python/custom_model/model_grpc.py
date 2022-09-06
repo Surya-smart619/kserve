@@ -13,13 +13,15 @@
 # limitations under the License.
 
 import asyncio
-import kserve
-from torchvision import models, transforms
-from typing import Dict
-import torch
-from PIL import Image
 import base64
 import io
+from typing import Dict, Union
+
+import kserve
+import torch
+from kserve.grpc.grpc_predict_v2_pb2 import ModelInferRequest
+from PIL import Image
+from torchvision import models, transforms
 
 
 class AlexNetModel(kserve.Model):
@@ -34,15 +36,10 @@ class AlexNetModel(kserve.Model):
         self.model = model
         self.ready = True
 
-    def predict(self, request: Dict) -> Dict:
+    def predict(self, request: Union[Dict, ModelInferRequest]) -> Dict:
         inputs = request["instances"]
-
-        # Input follows the Tensorflow V1 HTTP API for binary values
-        # https://www.tensorflow.org/tfx/serving/api_rest#encoding_binary_values
-        data = inputs[0]["image"]["b64"]
-
-        raw_img_data = base64.b64decode(data)
-        input_image = Image.open(io.BytesIO(raw_img_data))
+        print(">>>>>>>>>>>>>>>>>", inputs)
+        input_image = Image.open(io.BytesIO(inputs[0]))
 
         preprocess = transforms.Compose([
             transforms.Resize(256),
