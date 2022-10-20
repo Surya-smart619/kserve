@@ -85,7 +85,8 @@ func (c *CustomPredictor) GetStorageSpec() *StorageSpec {
 }
 
 // GetContainers transforms the resource into a container spec
-func (c *CustomPredictor) GetContainer(metadata metav1.ObjectMeta, extensions *ComponentExtensionSpec, config *InferenceServicesConfig) *v1.Container {
+func (c *CustomPredictor) GetContainer(metadata metav1.ObjectMeta, extensions *ComponentExtensionSpec, config *InferenceServicesConfig,
+	predictorHost ...string) *v1.Container {
 	return &c.Containers[0]
 }
 
