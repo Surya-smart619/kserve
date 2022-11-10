@@ -169,7 +169,7 @@ class ModelServer:
             }
         )
 
-    def start(self, models: Union[List[Model], Dict[str, Deployment]]) -> None:
+    def start(self, models: Union[List[Model], Dict[str, Deployment]]):
         if isinstance(models, list):
             for model in models:
                 if isinstance(model, Model):
@@ -194,8 +194,10 @@ class ModelServer:
         logging.info(f"starting uvicorn with {self.workers} workers")
         # TODO: multiprocessing does not work programmatically
         # https://www.uvicorn.org/deployment/#running-programmatically
+        application = self.create_application()
+        return application
         cfg = uvicorn.Config(
-            self.create_application(),
+            application,
             host="0.0.0.0",
             port=self.http_port,
             workers=self.workers,

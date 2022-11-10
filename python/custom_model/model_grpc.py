@@ -100,8 +100,6 @@ class AlexNetModel(kserve.Model):
                 ]}
         return response
 
-
-if __name__ == "__main__":
-    model = AlexNetModel("custom-model")
-    model.load()
-    kserve.ModelServer(workers=1).start([model])
+model = AlexNetModel("custom-model")
+model.load()
+application = kserve.ModelServer(workers=1).start([model])
