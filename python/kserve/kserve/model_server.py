@@ -194,8 +194,19 @@ class ModelServer:
         logging.info(f"starting uvicorn with {self.workers} workers")
         # TODO: multiprocessing does not work programmatically
         # https://www.uvicorn.org/deployment/#running-programmatically
+        app = self.create_application()
+
+        @app.on_event("startup")
+        async def on_startup():
+            logging.info("Starting up>>>>>>>>>>>>>>")
+            app.state.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.workers)
+
+        @app.on_event("shutdown")
+        async def on_shutdown():
+            logging.info("Shutting down>>>>>>>>>>>>>>")
+            app.state.executor.shutdown()
         cfg = uvicorn.Config(
-            self.create_application(),
+            app,
             host="0.0.0.0",
             port=self.http_port,
             workers=self.workers,

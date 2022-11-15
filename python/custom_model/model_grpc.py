@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import base64
 import io
 from typing import Dict, Union
@@ -24,6 +25,11 @@ from kserve.utils.utils import generate_uuid
 from PIL import Image
 from torchvision import models, transforms
 
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument("--workers", default=1, type=int,
+                    help="The number of workers for multi-processing.")
+
+args, _ = parser.parse_known_args()
 
 class AlexNetModel(kserve.Model):
     def __init__(self, name: str):
@@ -104,4 +110,4 @@ class AlexNetModel(kserve.Model):
 if __name__ == "__main__":
     model = AlexNetModel("custom-model")
     model.load()
-    kserve.ModelServer(workers=1).start([model])
+    kserve.ModelServer(workers=args.workers).start([model])
