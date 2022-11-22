@@ -18,7 +18,7 @@ from typing import Dict, Union
 
 import kserve
 import torch
-from kserve.grpc.grpc_predict_v2_pb2 import (ModelInferRequest,
+from kserve.kserve_grpc.grpc_predict_v2_pb2 import (ModelInferRequest,
                                              ModelInferResponse)
 from kserve.utils.utils import generate_uuid
 from PIL import Image
@@ -105,3 +105,9 @@ if __name__ == "__main__":
     model = AlexNetModel("custom-model")
     model.load()
     kserve.ModelServer(workers=1).start([model])
+
+
+# # if __name__ == "__main__":
+# model = AlexNetModel("custom-model")
+# model.load()
+# application =kserve.ModelServer(workers=1).start([model])

@@ -17,7 +17,7 @@ import base64
 from typing import Dict, Union
 
 from kserve import Model, ModelServer, model_server
-from kserve.grpc.grpc_predict_v2_pb2 import ModelInferRequest
+from kserve.kserve_grpc.grpc_predict_v2_pb2 import ModelInferRequest
 from kserve.handlers.v2_datamodels import InferenceRequest
 
 

@@ -16,9 +16,9 @@
 import logging
 from concurrent import futures
 
-from kserve.grpc import grpc_predict_v2_pb2_grpc
-from kserve.grpc.interceptors import LoggingInterceptor
-from kserve.grpc.servicer import InferenceServicer
+from kserve.kserve_grpc import grpc_predict_v2_pb2_grpc
+from kserve.kserve_grpc.interceptors import LoggingInterceptor
+from kserve.kserve_grpc.servicer import InferenceServicer
 from kserve.handlers.dataplane import DataPlane
 from kserve.handlers.model_repository_extension import ModelRepositoryExtension
 

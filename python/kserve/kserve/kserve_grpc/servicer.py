@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-from kserve.grpc import grpc_predict_v2_pb2 as pb
-from kserve.grpc import grpc_predict_v2_pb2_grpc
+from kserve.kserve_grpc import grpc_predict_v2_pb2 as pb
+from kserve.kserve_grpc import grpc_predict_v2_pb2_grpc
 from kserve.handlers.dataplane import DataPlane
 from kserve.handlers.model_repository_extension import ModelRepositoryExtension
 from kserve.utils.utils import to_headers

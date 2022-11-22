@@ -17,6 +17,7 @@ import asyncio
 import concurrent.futures
 import logging
 from distutils.util import strtobool
+from subprocess import Popen
 from typing import List, Dict, Union
 
 import pkg_resources
@@ -27,10 +28,10 @@ from fastapi.responses import ORJSONResponse
 from prometheus_client import REGISTRY, exposition
 from ray import serve
 from ray.serve.api import Deployment, RayServeHandle
-from .utils import utils
+from kserve.utils import utils
 import kserve.errors as errors
 from kserve import Model
-from kserve.grpc.server import GRPCServer
+from kserve.kserve_grpc.server import GRPCServer
 from kserve.handlers import V1Endpoints, V2Endpoints
 from kserve.handlers.dataplane import DataPlane
 from kserve.handlers.model_repository_extension import ModelRepositoryExtension
@@ -192,10 +193,18 @@ class ModelServer:
             raise RuntimeError("Unknown model collection types")
 
         logging.info(f"starting uvicorn with {self.workers} workers")
+        app = self.create_application()
+        print(type(application))
+        # return applicaiton
+        # return applicaiton
         # TODO: multiprocessing does not work programmatically
         # https://www.uvicorn.org/deployment/#running-programmatically
+        # subprocess.call(["ls kserve/kserve -l"], shell=True)
+        # print(">???????????????????", pwd)
+        # subprocess.call(["cd kserve/kserve && uvicorn model_server:application --port 8080"], shell=True)
+        Popen(["cd kserve/kserve && uvicorn model_server:application --port 8080"], shell=True)
         cfg = uvicorn.Config(
-            self.create_application(),
+            app,
             host="0.0.0.0",
             port=self.http_port,
             workers=self.workers,
@@ -245,7 +254,7 @@ class ModelServer:
             concurrent.futures.ThreadPoolExecutor(max_workers=self.max_asyncio_workers))
 
         async def servers_task():
-            servers = [self._server.serve()]
+            servers = []
             if self.enable_grpc:
                 servers.append(self._grpc_server.start(self.max_threads))
             await asyncio.gather(*servers)
@@ -261,3 +270,6 @@ class ModelServer:
                 "Failed to register model, model.name must be provided.")
         self.registered_models.update(model)
         logging.info("Registering model: %s", model.name)
+
+
+application = ModelServer().create_application()

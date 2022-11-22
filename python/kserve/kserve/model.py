@@ -23,8 +23,8 @@ import httpx
 import orjson
 from cloudevents.http import CloudEvent
 from prometheus_client import Histogram
-from kserve.grpc import grpc_predict_v2_pb2_grpc
-from kserve.grpc.grpc_predict_v2_pb2 import (ModelInferRequest,
+from kserve.kserve_grpc import grpc_predict_v2_pb2_grpc
+from kserve.kserve_grpc.grpc_predict_v2_pb2 import (ModelInferRequest,
                                              ModelInferResponse)
 
 from kserve.errors import InvalidInput
@@ -144,7 +144,7 @@ class Model:
             # requires appending ":80" to the predictor host for gRPC to work
             if ":" not in self.predictor_host:
                 self.predictor_host = self.predictor_host + ":80"
-            _channel = grpc.aio.insecure_channel(self.predictor_host)
+            _channel = kserve_grpc.aio.insecure_channel(self.predictor_host)
             self._grpc_client_stub = grpc_predict_v2_pb2_grpc.GRPCInferenceServiceStub(_channel)
         return self._grpc_client_stub
 
