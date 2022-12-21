@@ -17,10 +17,10 @@ import asyncio
 import concurrent.futures
 import logging
 from distutils.util import strtobool
-from typing import List, Dict, Union
+from typing import List, Dict, Optional, Union
 
 import pkg_resources
-import uvicorn
+from gunicorn.app.base import BaseApplication
 from fastapi import FastAPI, Request, Response
 from fastapi.routing import APIRoute as FastAPIRoute
 from fastapi.responses import ORJSONResponse
@@ -71,6 +71,28 @@ async def metrics_handler(request: Request) -> Response:
     encoder, content_type = exposition.choose_encoder(request.headers.get("accept"))
     return Response(content=encoder(REGISTRY), headers={"content-type": content_type})
 
+
+class GunicornCustomApplication(BaseApplication):
+    """Gunicorn Custom application
+
+    Args:
+        app (object): Application instance.
+        options (dict): Gunicorn CLI arguments.
+    """
+    
+    def __init__(self, app, options=None):
+        self.options = options or {}
+        self.application = app
+        super().__init__()
+
+    def load_config(self):
+        config = {key: value for key, value in self.options.items()
+                  if key in self.cfg.settings and value is not None}
+        for key, value in config.items():
+            self.cfg.set(key.lower(), value)
+
+    def load(self):
+        return self.application
 
 class ModelServer:
     """KServe ModelServer
@@ -191,52 +213,6 @@ class ModelServer:
         else:
             raise RuntimeError("Unknown model collection types")
 
-        logging.info(f"starting uvicorn with {self.workers} workers")
-        # TODO: multiprocessing does not work programmatically
-        # https://www.uvicorn.org/deployment/#running-programmatically
-        cfg = uvicorn.Config(
-            self.create_application(),
-            host="0.0.0.0",
-            port=self.http_port,
-            workers=self.workers,
-            log_config={
-                "version": 1,
-                "formatters": {
-                    "default": {
-                        "()": "uvicorn.logging.DefaultFormatter",
-                        "datefmt": DATE_FORMAT,
-                        "fmt": "%(asctime)s.%(msecs)03d %(name)s %(levelprefix)s %(message)s",
-                        "use_colors": None,
-                    },
-                    "access": {
-                        "()": "uvicorn.logging.AccessFormatter",
-                        "datefmt": DATE_FORMAT,
-                        "fmt": '%(asctime)s.%(msecs)03d %(name)s %(levelprefix)s %(client_addr)s - '
-                               '"%(request_line)s" %(status_code)s',
-                        # noqa: E501
-                    },
-                },
-                "handlers": {
-                    "default": {
-                        "formatter": "default",
-                        "class": "logging.StreamHandler",
-                        "stream": "ext://sys.stderr",
-                    },
-                    "access": {
-                        "formatter": "access",
-                        "class": "logging.StreamHandler",
-                        "stream": "ext://sys.stdout",
-                    },
-                },
-                "loggers": {
-                    "uvicorn": {"handlers": ["default"], "level": "INFO"},
-                    "uvicorn.error": {"level": "INFO"},
-                    "uvicorn.access": {"handlers": ["access"], "level": "INFO", "propagate": False},
-                },
-            }
-        )
-
-        self._server = uvicorn.Server(cfg)
         if self.max_asyncio_workers is None:
             # formula as suggest in https://bugs.python.org/issue35279
             self.max_asyncio_workers = min(32, utils.cpu_count()+4)
@@ -244,10 +220,24 @@ class ModelServer:
         asyncio.get_event_loop().set_default_executor(
             concurrent.futures.ThreadPoolExecutor(max_workers=self.max_asyncio_workers))
 
+        async def serve():
+            logging.info(f"starting gunicorn with {self.workers} workers")
+            options = {
+                    'bind': '%s:%s' % ('127.0.0.1', '8080'),
+                    'workers': 2,
+                    'worker_class': 'uvicorn.workers.UvicornWorker' # guincorn worker process class for fast api
+                }
+            logging.info(f"CLI arguments for start application with gunicorn: {options}")
+            GunicornCustomApplication(self.create_application(), options).run()
+
         async def servers_task():
-            servers = [self._server.serve()]
+            logging.info(f"is grpc enabled : {self.enable_grpc}")
+            servers = []
             if self.enable_grpc:
                 servers.append(self._grpc_server.start(self.max_threads))
+
+            servers.append(serve())
+            logging.info(f"No of server used: {len(servers)}")
             await asyncio.gather(*servers)
         asyncio.run(servers_task())
 
