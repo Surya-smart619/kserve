@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 from typing import Dict
 
 import kserve
 from jpmml_evaluator import make_evaluator
 from jpmml_evaluator.py4j import launch_gateway, Py4JBackend
+from kserve.utils.utils import generate_uuid
 
 from kserve.errors import ModelMissingError
 
@@ -57,9 +59,25 @@ class PmmlModel(kserve.Model):
         return self.ready
 
     def predict(self, payload: Dict, headers: Dict[str, str] = None) -> Dict:
-        instances = payload["instances"]
         try:
-            result = [self.evaluator.evaluate(dict(zip(self.input_fields, instance))) for instance in instances]
-            return {"predictions": result}
+            if "instances" in payload:
+                instances = payload["instances"]
+                result = [self.evaluator.evaluate(dict(zip(self.input_fields, instance))) for instance in instances]
+                return {"predictions": result}
+            if "inputs" in payload:
+                instances = payload["inputs"][0]["data"]
+                result = [self.evaluator.evaluate(dict(zip(self.input_fields, instance))) for instance in instances]
+                response_id = generate_uuid()
+                return {
+                    "model_name" : self.name,
+                    "id" : response_id,
+                    "outputs" : [{
+                            "name": "output-0",
+                            "shape": payload["inputs"][0]["shape"],
+                            "datatype": payload["inputs"][0]["datatype"],
+                            "data": result
+                        }]
+                }
+
         except Exception as e:
             raise Exception("Failed to predict %s" % e)
