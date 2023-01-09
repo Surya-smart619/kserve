@@ -14,6 +14,8 @@
 
 from kserve import Model, Storage
 from kserve.errors import InferenceError, ModelMissingError
+from kserve.protocol.infer_type import InferOutput, InferRequest, InferResponse
+from kserve.utils.utils import generate_uuid
 import xgboost as xgb
 import numpy as np
 from xgboost import XGBModel
@@ -55,8 +57,19 @@ class XGBoostModel(Model):
     def predict(self, payload: Dict, headers: Dict[str, str] = None) -> Dict:
         try:
             # Use of list as input is deprecated see https://github.com/dmlc/xgboost/pull/3970
-            dmatrix = xgb.DMatrix(np.array(payload["instances"]), nthread=self.nthread)
-            result: xgb.DMatrix = self._booster.predict(dmatrix)
-            return {"predictions": result.tolist()}
+            if isinstance(payload, Dict):
+                dmatrix = xgb.DMatrix(np.array(payload["instances"]), nthread=self.nthread)
+                result: xgb.DMatrix = self._booster.predict(dmatrix)
+                return {"predictions": result.tolist()}
+            elif isinstance(payload, InferRequest):
+                infer_input = payload.to_rest()
+                instances = infer_input["inputs"][0]["data"]
+                dmatrix = xgb.DMatrix(np.array(instances), nthread=self.nthread)
+                result: xgb.DMatrix = self._booster.predict(dmatrix)
+                response_id = generate_uuid()
+                infer_output = InferOutput(name="output-0", shape=list(infer_input["inputs"][0]["shape"]), datatype=infer_input["inputs"][0]["datatype"], data=result.tolist())
+                infer_response = InferResponse(model_name=self.name, infer_outputs=[infer_output], request_id=response_id)
+                return infer_response
+
         except Exception as e:
             raise InferenceError(str(e))

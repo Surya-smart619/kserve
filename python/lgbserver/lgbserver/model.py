@@ -20,6 +20,10 @@ from typing import Dict
 import pandas as pd
 from kserve.errors import InferenceError, ModelMissingError
 
+from kserve.protocol.infer_type import InferOutput, InferRequest, InferResponse
+
+from kserve.utils.utils import generate_uuid
+
 MODEL_EXTENSIONS = (".bst")
 
 
@@ -53,12 +57,27 @@ class LightGBMModel(kserve.Model):
 
     def predict(self, payload: Dict, headers: Dict[str, str] = None) -> Dict:
         try:
-            dfs = []
-            for input in payload['inputs']:
-                dfs.append(pd.DataFrame(input, columns=self._booster.feature_name()))
-            inputs = pd.concat(dfs, axis=0)
+            if isinstance(payload, Dict):
+                dfs = []
+                for input in payload['inputs']:
+                    dfs.append(pd.DataFrame(input, columns=self._booster.feature_name()))
+                inputs = pd.concat(dfs, axis=0)
 
-            result = self._booster.predict(inputs)
-            return {"predictions": result.tolist()}
+                result = self._booster.predict(inputs)
+                return {"predictions": result.tolist()}
+
+            elif isinstance(payload, InferRequest):
+                dfs = []
+                infer_input = payload.to_rest()
+                instances = infer_input["inputs"][0]["data"]
+                for input in instances:
+                    dfs.append(pd.DataFrame(input, columns=self._booster.feature_name()))
+                inputs = pd.concat(dfs, axis=0)
+                result = self._booster.predict(inputs)
+                response_id = generate_uuid()
+                infer_output = InferOutput(name="output-0", shape=list(infer_input["inputs"][0]["shape"]), datatype=infer_input["inputs"][0]["datatype"], data=result.tolist())
+                infer_response = InferResponse(model_name=self.name, infer_outputs=[infer_output], request_id=response_id)
+                return infer_response
+                
         except Exception as e:
             raise InferenceError(str(e))

@@ -14,6 +14,7 @@
 
 from sklearn import svm
 from sklearn import datasets
+from kserve.protocol.infer_type import InferInput, InferRequest
 from sklearnserver import SKLearnModel
 import joblib
 import pickle
@@ -93,3 +94,30 @@ def test_dir_with_two_models():
     with pytest.raises(RuntimeError) as e:
         model.load()
     assert 'More than one model file is detected' in str(e.value)
+
+
+def test_model_v2():
+    # TODO: SKLearnModel instance parmas "model_dir" changed to JOBLIB_FILE[0] instead of MIXEDTYPE_DIR
+    model = SKLearnModel("model", JOBLIB_FILE[0])
+    model.load()
+
+    # Test input data structure for v2 
+    request = {
+        "inputs": [
+            {
+                "name": "input-0",
+                "shape": [2, 4],
+                "datatype": "FP32",
+                "data": [
+                    [6.8, 2.8, 4.8, 1.4],
+                    [6.0, 3.4, 4.5, 1.6]
+                ]
+            }
+        ]
+    }
+    infer_input = InferInput(request["inputs"][0]["name"], request["inputs"][0]
+                         ["shape"], request["inputs"][0]["datatype"], request["inputs"][0]["data"])
+    infer_request = InferRequest(model_name="sklearn", infer_inputs=[infer_input])
+    infer_response = model.predict(infer_request)
+    response = infer_response.to_rest()
+    assert response["outputs"][0]["data"] == [1, 1]

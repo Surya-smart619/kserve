@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 from typing import Dict
 
@@ -20,6 +21,9 @@ from jpmml_evaluator import make_evaluator
 from jpmml_evaluator.py4j import launch_gateway, Py4JBackend
 
 from kserve.errors import ModelMissingError
+
+from kserve.protocol.infer_type import InferOutput, InferRequest, InferResponse
+from kserve.utils.utils import generate_uuid
 
 MODEL_EXTENSIONS = ('.pmml')
 
@@ -57,9 +61,18 @@ class PmmlModel(kserve.Model):
         return self.ready
 
     def predict(self, payload: Dict, headers: Dict[str, str] = None) -> Dict:
-        instances = payload["instances"]
         try:
-            result = [self.evaluator.evaluate(dict(zip(self.input_fields, instance))) for instance in instances]
-            return {"predictions": result}
+            if isinstance(payload, Dict) and "instances" in payload:
+                instances = payload["instances"]
+                result = [self.evaluator.evaluate(dict(zip(self.input_fields, instance))) for instance in instances]
+                return {"predictions": result}
+            elif isinstance(payload, InferRequest):
+                infer_input = payload.to_rest()
+                instances = infer_input["inputs"][0]["data"]
+                result = [self.evaluator.evaluate(dict(zip(self.input_fields, instance))) for instance in instances]
+                response_id = generate_uuid()
+                infer_output = InferOutput(name="output-0", shape=list(infer_input["inputs"][0]["shape"]), datatype=infer_input["inputs"][0]["datatype"], data=result)
+                infer_response = InferResponse(model_name=self.name, infer_outputs=[infer_output], request_id=response_id)
+                return infer_response
         except Exception as e:
             raise Exception("Failed to predict %s" % e)

@@ -15,6 +15,7 @@
 import xgboost as xgb
 import os
 from sklearn.datasets import load_iris
+from kserve.protocol.infer_type import InferInput, InferRequest
 from xgbserver import XGBoostModel
 
 model_dir = os.path.join(os.path.dirname(__file__), "example_model", "model")
@@ -41,3 +42,29 @@ def test_model():
     request = [X[0].tolist()]
     response = model.predict({"instances": request})
     assert response["predictions"] == [0]
+
+
+def test_model_v2():
+    model = XGBoostModel("model", model_dir, NTHREAD)
+    model.load()
+
+    # Test input data structure for v2 
+    request = {
+        "inputs": [
+            {
+                "name": "input-0",
+                "shape": [2, 4],
+                "datatype": "FP32",
+                "data": [
+                    [6.8, 2.8, 4.8, 1.4],
+                    [6.0, 3.4, 4.5, 1.6]
+                ]
+            }
+        ]
+    }
+    infer_input = InferInput(request["inputs"][0]["name"], request["inputs"][0]
+                         ["shape"], request["inputs"][0]["datatype"], request["inputs"][0]["data"])
+    infer_request = InferRequest(model_name = "xgboost", infer_inputs = [infer_input])
+    infer_response = model.predict(infer_request)
+    response = infer_response.to_rest()
+    assert response["outputs"][0]["data"] == [1.0, 1.0]
